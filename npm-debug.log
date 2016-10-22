@@ -1,0 +1,50 @@
+0 info it worked if it ends with ok
+1 verbose cli [ '/usr/bin/nodejs',
+1 verbose cli   '/usr/bin/npm',
+1 verbose cli   'install',
+1 verbose cli   'git://https://github.com/mateodelnorte/coinbase.git' ]
+2 info using npm@1.3.10
+3 info using node@v0.10.25
+4 verbose cache add [ 'git://https://github.com/mateodelnorte/coinbase.git', null ]
+5 verbose cache add name=undefined spec="git://https://github.com/mateodelnorte/coinbase.git" args=["git://https://github.com/mateodelnorte/coinbase.git",null]
+6 verbose parsed url { protocol: 'git:',
+6 verbose parsed url   slashes: true,
+6 verbose parsed url   auth: null,
+6 verbose parsed url   host: 'https',
+6 verbose parsed url   port: null,
+6 verbose parsed url   hostname: 'https',
+6 verbose parsed url   hash: null,
+6 verbose parsed url   search: null,
+6 verbose parsed url   query: null,
+6 verbose parsed url   pathname: '//github.com/mateodelnorte/coinbase.git',
+6 verbose parsed url   path: '//github.com/mateodelnorte/coinbase.git',
+6 verbose parsed url   href: 'git://https//github.com/mateodelnorte/coinbase.git' }
+7 silly lockFile 1399b288-b-com-mateodelnorte-coinbase-git git://https://github.com/mateodelnorte/coinbase.git
+8 verbose lock git://https://github.com/mateodelnorte/coinbase.git /home/ubuntu/.npm/1399b288-b-com-mateodelnorte-coinbase-git.lock
+9 verbose addRemoteGit [ 'git://https://github.com/mateodelnorte/coinbase.git',
+9 verbose addRemoteGit   'master' ]
+10 error git clone git://https://github.com/mateodelnorte/coinbase.git Cloning into bare repository '/home/ubuntu/.npm/_git-remotes/git-https-github-com-mateodelnorte-coinbase-git-1399b288'...
+10 error git clone git://https://github.com/mateodelnorte/coinbase.git fatal: unable to connect to https:
+10 error git clone git://https://github.com/mateodelnorte/coinbase.git https: Servname not supported for ai_socktype
+11 silly lockFile 1399b288-b-com-mateodelnorte-coinbase-git git://https://github.com/mateodelnorte/coinbase.git
+12 silly lockFile 1399b288-b-com-mateodelnorte-coinbase-git git://https://github.com/mateodelnorte/coinbase.git
+13 error Error: Command failed: Cloning into bare repository '/home/ubuntu/.npm/_git-remotes/git-https-github-com-mateodelnorte-coinbase-git-1399b288'...
+13 error fatal: unable to connect to https:
+13 error https: Servname not supported for ai_socktype
+13 error
+13 error
+13 error     at ChildProcess.exithandler (child_process.js:637:15)
+13 error     at ChildProcess.EventEmitter.emit (events.js:98:17)
+13 error     at maybeClose (child_process.js:743:16)
+13 error     at Process.ChildProcess._handle.onexit (child_process.js:810:5)
+14 error If you need help, you may report this log at:
+14 error     <http://github.com/isaacs/npm/issues>
+14 error or email it to:
+14 error     <npm-@googlegroups.com>
+15 error System Linux 3.13.0-91-generic
+16 error command "/usr/bin/nodejs" "/usr/bin/npm" "install" "git://https://github.com/mateodelnorte/coinbase.git"
+17 error cwd /home/ubuntu/midterm
+18 error node -v v0.10.25
+19 error npm -v 1.3.10
+20 error code 128
+21 verbose exit [ 1, true ]

@@ -1,114 +1,199 @@
-repl = require('repl');
+var repl = require('repl');
+var _ = require('underscore');
+var superagent = require('superagent');
+const csv = require('fast-csv');
 
-var request = require('request');
-
-
-
-//var test = request('https://coinbase.com/api/v1/currencies/exchange_rates',function(error,response,body){
-//	if(!error && response.statusCode == 200){
-//		if(
-//		console.log(body);
-//	}
-//});
+var CSVFILE_DEFAULT = "coinbaseOrders.csv";
 
 
-//test repl context
-
+//tests repl
 var hello = "hello";
 
-//not the right way to do this. you need to type buy(10,usd) to do it right 
-//which is not on the output example
-
-//var buy = function(amount, currency){
-//
-//	//no currency (it is an optional parameter)
-//
-//	if (currency == null){
-//		//no currency, continue on for buying amount of bitcoin.
-//      	console.log("order to buy " + amount + " BTC queued.");
-//		//todo save into a variable or something to do order function.
-//	}
-//
-//	else{
-//		//buy amount at the currency rate
-//		var rate = 1000000;
-//		console.log("Order to buy " + amount + currency + " of BTC queued @ " + rate );
-//	}	
-//}
+var orderList = [];
 
 // ~~~~~~~~~~~~Start REPL mode~~~~~~~~~~~~~~~~~~~~
 
-var r = repl.start({ prompt: 'coinbase>', eval: evaluate });
+var r = repl.start({
+    prompt: 'coinbase>',
+    eval: evaluate
+});
+
+// ~~~~~~~~~~REPL functions~~~~~~~~~~~~~~~~~~~~~~
 
 // evaluate each thing put into the repl command prompt
+function evaluate(cmd, context, fileName, callback) {
+    //split commands by spaces
+    var cmds = cmd.split(" ");
 
-function evaluate(cmd, context, fileName, callback){
-	//split commands by spaces
-	var cmds = cmd.split(" ");
+    //execute current command
+    var exe = cmds[0].trim().toLowerCase();
 
-	//execute current command
-	var exe = cmds[0].trim();
+    //these will be the commands that are supported
+    if (exe == "buy") {
+        return buy(cmds);
+    }
+    if (exe == "sell") {
+        return sell(cmds);
+    }
+    if (exe == "orders") {
+        return orders();
+    }
+    callback(null, result);
+    return;
 
-	//these will be the commands that are supported
-	if(exe == "buy"){
-	return buy(cmds);}
-//	console.log("You executed the buy command.");}
-	if(exe == "sell"){console.log("You executed the sell command");}
-	if(exe == "orders"){console.log("You executed the orders command");}
-	callback(null, result);
-	return;	
 }
 
 // buy function, buy the remaining arguments (amount, currency)
-function buy(rem){
-	var x = rem[0].trim();
+function buy(rem) {
+    var actionType = rem[0].trim();
 
-	//check for valid command (buy 10, buy 10 usd). aka MUST have a 2nd arg
-	//TODO check for valid (not buy asdf)
-	if(rem[1]==null || rem[1]<0){console.log("A buy amount was not input or the input was negative.");}
-	
-	else{
-		var amount = rem[1].trim();
-	
-		//case 1 there is no currency
-		if(rem[2] == null){
-			console.log("Order to buy " + amount + " BTC queued.");
-		} 
+    //check for valid command (buy 10, buy 10 usd). aka MUST have a 2nd arg
+    //TODO check for valid (not buy asdf)
+    if (rem[1] == null || rem[1] < 0) {
+        console.log("A buy amount was not input or the input was negative.");
+    }
 
-		//case 2 there is a currency
-		if(rem[2]!=null){
-			var currency = rem[2].trim();
-	
-			if(isCurrencyValid(currency)){ 
-				//add to order TODO
-				console.log("Order to buy " + amount + " " + currency + " worth of BTC queued.");
-			}
-			else{ console.log("please enter a valid currrency type"); }
-		}
-	}
-	return;
+    else {
+        var amount = rem[1].trim();
+
+        //case 1 there is no currency
+        if (rem[2] == null) {
+            addToOrders(actionType, amount, null);
+            console.log("Order to buy " + amount + " BTC queued.");
+        }
+        //case 2 there is a currency
+        else {
+            var currency = rem[2].trim();
+            //this is NOT valid currency
+            isCurrencyValid(currency, function(error, response) {
+                if (error) {
+                    console.log(error);
+                }
+                else {
+                    addToOrders(actionType, amount, currency);
+                    getExchangeRate(actionType, amount, currency);
+
+                }
+
+            });
+        }
+    }
+    return;
 }
 
-//TEST for usd first, add in others later from the coinbase api
-function isCurrencyValid(currency){
-	if(currency == "usd"){return true;}
-	else return false;
+function isCurrencyValid(currency, callback) {
+    // return true;
+
+    superagent.get('https://api.coinbase.com/v1/currencies')
+        .set('Accept', 'application/json')
+        .end(function(error, res) {
+            if (error) {
+                return;
+            }
+            var holder = res.body;
+            var valid = false;
+            holder.forEach(function(curr) {
+                // curr = [ 'Gibraltar Pound (GIP)', 'GIP' ]
+                if (curr[1] === currency.toUpperCase()) {
+                    valid = true;
+                }
+            });
+            if (valid === true) {
+                callback(null, true);
+            }
+            else {
+                callback("invalid currency");
+            }
+            //console.log(validity);
+        });
 }
 
+function getExchangeRate(actionType, amount, currency) {
+    var keyword_btccur = "btc_to_" + currency.toLowerCase();
+    var keyword_curbtc = currency.toLowerCase() + "_to_btc";
+    superagent.get("https://api.coinbase.com/v1/currencies/exchange_rates")
+        .set('Accept', 'application/json')
+        .end(function(error, res) {
+            var holder = res.body;
+            if (currency != null) {
 
-r.context.request = request;
+                var div_btc_curr = holder[keyword_btccur];
+                var div_curr_btc = holder[keyword_curbtc];
+                console.log("Order to " + actionType + " " + amount + " " + currency + " " + "worth of BTC queued @ " +
+                    div_btc_curr + " " + "BTC/" + currency.toUpperCase() + " (" + div_curr_btc + " BTC)");
+            }
+        });
 
-r.defineCommand('buy',{
-	help: 'buy bitcoins',
-	action: function(amount){
-		this.lineParser.reset();
-		this.bufferedCommand = '';
-		//do buy stuff
-		console.log('buy bitcoins');
-		this.displayPrompt();
-	}
-});
+}
 
-r.context.hello = hello;
+function sell(rem) {
+    //for exchange rate single function (not buy and sell seperated)
+    var actionType = rem[0].trim();
 
-r.context.buy = buy;
+    //check for valid command (sell 10, buy 10 usd). aka MUST have a 2nd arg
+    //TODO check for valid (not buy asdf)
+    if (rem[1] == null || rem[1] < 0) {
+        console.log("There was no sell amount or the amount was negative.");
+    }
+
+    else {
+        var amount = rem[1].trim();
+
+        //case 1 there is no currency
+        if (rem[2] == null) {
+            addToOrders(actionType, amount, null);
+            console.log("Order to sell " + amount + " BTC queued.");
+        }
+
+        //case 2 there is a currency
+        else {
+            var currency = rem[2].trim();
+            //this is NOT valid currency
+            isCurrencyValid(currency, function(error, response) {
+                if (error) {
+                    console.log(error);
+                }
+                else {
+                    addToOrders(actionType, amount, currency);
+                    getExchangeRate(actionType, amount, currency);
+
+                }
+
+            });
+        }
+    }
+    return;
+
+}
+
+function addToOrders(actionType, amount, currency) {
+    if (currency == null) {
+        var newOrder = {
+            'timeDate': new Date(),
+            'type': actionType,
+            'amount': amount,
+            'currency': "BTC",
+            'status': "UNFILLED"
+        };
+        orderList.push(newOrder);
+    }
+    else {
+        var newOrder = {
+            'timeDate': new Date(),
+            'type': actionType,
+            'amount': amount,
+            'currency': currency,
+            'status': "UNFILLED"
+        };
+        orderList.push(newOrder);
+    }
+}
+
+function orders() {
+    console.log("\n === CURRENT ORDERS ===");
+
+    orderList.forEach(function(o) {
+        console.log(o.timeDate + " : " + o.type + " " +
+            o.amount + o.currency + " :  " + o.status);
+    });
+}

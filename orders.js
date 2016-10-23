@@ -1,6 +1,10 @@
 var repl = require('repl');
 var _ = require('underscore');
 var superagent = require('superagent');
+const csv = require('fast-csv');
+
+var CSVFILE_DEFAULT = "coinbaseOrders.csv";
+
 
 //tests repl
 var hello = "hello";
@@ -19,7 +23,7 @@ function evaluate(cmd, context, fileName, callback){
         var cmds = cmd.split(" ");
 
         //execute current command
-        var exe = cmds[0].trim();
+        var exe = cmds[0].trim().toLowerCase();
 
         //these will be the commands that are supported
         if(exe == "buy"){return buy(cmds);}
@@ -56,24 +60,48 @@ function buy(rem){
                         //this IS valid currency
                         else{ 
                            // var exrate = getBuyExchangeRate(amount,currency);
-                           getExchangeRateAndAddToOrders(actionType,amount,currency);
+                           addToOrders(actionType, amount, currency);
+                           getExchangeRate(actionType,amount,currency);
                         }
                 }
         }
         return;
 }
 
-//TEST for usd first, add in others later from the coinbase api
 function isCurrencyValid(currency){
-        //TEST RESPONSE
         return true;
-       
+        
+        //why doesnt this work??
+        var validity = false;
+        
+         superagent.get('https://api.coinbase.com/v1/currencies')
+          .set('Accept', 'application/json')
+          .end(function(error, res){
+              if (error){return;}
+              var holder = res.body;
+              holder.forEach(function (curr) {
+                  // curr = [ 'Gibraltar Pound (GIP)', 'GIP' ]
+                  if (curr[1] === currency) {validity = true;}   
+              });
+        });
+        return validity;
 }
 
-function getExchangeRateAndAddToOrders(actionType,amount,currency){
+function getExchangeRate(actionType,amount,currency){
+      var keyword_btccur= "btc_to_" + currency;
+      var keyword_curbtc= currency + "_to_btc";
+        superagent.get("https://api.coinbase.com/v1/currencies/exchange_rates")
+          .set('Accept', 'application/json')
+          .end(function(error, res){
+                var holder = res.body;
+                if(currency != null){
     
-    
-     //TODO Fix this
+                  var div_btc_curr = holder[keyword_btccur];
+                  var div_curr_btc = holder[keyword_curbtc];
+                  console.log("Order to " + actionType + " " + amount + " " + currency + " " + "worth of BTC queued @ " + 
+                    div_btc_curr + " " + "BTC/" + currency.toUpperCase() + " ("+ div_curr_btc + " BTC)");
+                }
+                });
                 
 }
 
@@ -100,7 +128,8 @@ function sell(rem){
 
                                 //this is valid currency
                                 if(isCurrencyValid(currency)){
-                                   getExchangeRateAndAddToOrders(actionType,amount,currency);
+                                    addToOrders(actionType, amount, currency);
+                                   getExchangeRate(actionType,amount,currency);
                                     
                                 }
 //                              var exrate = getCurrencyRate(currency);
@@ -120,7 +149,7 @@ function addToOrders(actionType,amount,currency){
             'amount': amount,
             'currency': "BTC",
             'status': "UNFILLED"
-        }
+        };
         orderList.push(newOrder);
     }
     else{
@@ -130,16 +159,16 @@ function addToOrders(actionType,amount,currency){
             'amount': amount,
             'currency': currency,
             'status': "UNFILLED"
-        }
+        };
         orderList.push(newOrder);
     }
 }
 
 function orders(){
     console.log("\n === CURRENT ORDERS ===" );
+    
    orderList.forEach(function(o){
        console.log(o.timeDate + " : " + o.type + " "
                 + o.amount + o.currency+" :  " + o.status);
-       
    });
 }

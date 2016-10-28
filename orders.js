@@ -1,4 +1,5 @@
 var repl = require('repl');
+
 var superagent = require('superagent');
 var jsontocsv = require("json2csv");
 var fs = require("fs");
@@ -48,12 +49,14 @@ function evaluate(cmd, context, fileName, callback) {
 
 // buy function, buy the remaining arguments (amount, currency)
 function buy(rem, callback) {
+
     var actionType = rem[0].trim();
 
     //check for valid command (buy 10, buy 10 usd). aka MUST have a 2nd arg
     //TODO check for valid (not buy asdf)
     if (rem[1] == null || rem[1] < 0) {
         console.log("A buy amount was not input or the input was negative.");
+
         callback();
     }
 
@@ -77,6 +80,7 @@ function buy(rem, callback) {
                 else {
                     addToOrders(actionType, amount, currency);
                     getExchangeRate(actionType, amount, currency, callback);
+
 
                 }
 
@@ -127,7 +131,6 @@ function getExchangeRate(actionType, amount, currency, callback) {
                 console.log("Order to " + actionType + " " + amount + " " + currency + " " + "worth of BTC queued @ " +
                     div_btc_curr + " " + "BTC/" + currency.toUpperCase() + " (" + div_curr_btc + " BTC)");
                 callback();
-                
             }
         });
 
@@ -170,7 +173,6 @@ function sell(rem) {
         }
     }
     return;
-
 }
 
 function addToOrders(actionType, amount, currency) {
@@ -198,7 +200,6 @@ function addToOrders(actionType, amount, currency) {
 
 function orders() {
     console.log("\n === CURRENT ORDERS ===");
-
     orderList.forEach(function(o) {
         console.log(o.timeDate + " : " + o.type + " " +
             o.amount + o.currency + " :  " + o.status);
@@ -213,3 +214,4 @@ function orders() {
        console.log('Order saved to CSV');
    });
 }
+

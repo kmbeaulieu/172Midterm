@@ -1,3 +1,5 @@
-"timeDate","type","amount","currency","status"
-"""2016-10-28T04:48:34.275Z""","buy","10","BTC","UNFILLED"
-"""2016-10-28T04:48:36.820Z""","buy","10","usd","UNFILLED"
+"timeAndDate","type","amount","currency","status"
+"""2016-10-28T05:50:05.309Z""","BUY","10","BTC","UNFILLED"
+"""2016-10-28T05:50:14.250Z""","BUY","100","BTC","UNFILLED"
+"""2016-10-28T05:50:30.772Z""","SELL","10","BTC","UNFILLED"
+"""2016-10-28T05:50:36.018Z""","SELL","100","BTC","UNFILLED"

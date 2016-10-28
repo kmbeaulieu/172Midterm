@@ -159,7 +159,7 @@ function sell(rem, callback) {
 
 function addToOrders(actionType, amount, currency) {
         //default to btc:  "sell x btc, buy x btc"
-        if(c==null){
+        if(currency==null){
             c='BTC';
         }
         else{

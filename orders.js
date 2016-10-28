@@ -1,7 +1,7 @@
 var repl = require('repl');
-var _ = require('underscore');
 var superagent = require('superagent');
-const csv = require('fast-csv');
+var jsontocsv = require("json2csv");
+var fs = require("fs");
 
 var CSVFILE_DEFAULT = "coinbaseOrders.csv";
 
@@ -23,14 +23,19 @@ var r = repl.start({
 // evaluate each thing put into the repl command prompt
 function evaluate(cmd, context, fileName, callback) {
     //split commands by spaces
+    
+    // console.log("eval");
+    // return callback();
     var cmds = cmd.split(" ");
-
+    //var result;
     //execute current command
     var exe = cmds[0].trim().toLowerCase();
 
     //these will be the commands that are supported
     if (exe == "buy") {
-        return buy(cmds);
+       //callback(null,buy(cmds));
+       
+       buy(cmds, callback);
     }
     if (exe == "sell") {
         return sell(cmds);
@@ -38,19 +43,18 @@ function evaluate(cmd, context, fileName, callback) {
     if (exe == "orders") {
         return orders();
     }
-    callback(null, result);
-    return;
-
+  
 }
 
 // buy function, buy the remaining arguments (amount, currency)
-function buy(rem) {
+function buy(rem, callback) {
     var actionType = rem[0].trim();
 
     //check for valid command (buy 10, buy 10 usd). aka MUST have a 2nd arg
     //TODO check for valid (not buy asdf)
     if (rem[1] == null || rem[1] < 0) {
         console.log("A buy amount was not input or the input was negative.");
+        callback();
     }
 
     else {
@@ -59,7 +63,8 @@ function buy(rem) {
         //case 1 there is no currency
         if (rem[2] == null) {
             addToOrders(actionType, amount, null);
-            console.log("Order to buy " + amount + " BTC queued.");
+            console.log( "Order to buy " + amount + " BTC queued.");
+            callback();
         }
         //case 2 there is a currency
         else {
@@ -71,7 +76,7 @@ function buy(rem) {
                 }
                 else {
                     addToOrders(actionType, amount, currency);
-                    getExchangeRate(actionType, amount, currency);
+                    getExchangeRate(actionType, amount, currency, callback);
 
                 }
 
@@ -108,7 +113,7 @@ function isCurrencyValid(currency, callback) {
         });
 }
 
-function getExchangeRate(actionType, amount, currency) {
+function getExchangeRate(actionType, amount, currency, callback) {
     var keyword_btccur = "btc_to_" + currency.toLowerCase();
     var keyword_curbtc = currency.toLowerCase() + "_to_btc";
     superagent.get("https://api.coinbase.com/v1/currencies/exchange_rates")
@@ -121,6 +126,8 @@ function getExchangeRate(actionType, amount, currency) {
                 var div_curr_btc = holder[keyword_curbtc];
                 console.log("Order to " + actionType + " " + amount + " " + currency + " " + "worth of BTC queued @ " +
                     div_btc_curr + " " + "BTC/" + currency.toUpperCase() + " (" + div_curr_btc + " BTC)");
+                callback();
+                
             }
         });
 
@@ -196,4 +203,13 @@ function orders() {
         console.log(o.timeDate + " : " + o.type + " " +
             o.amount + o.currency + " :  " + o.status);
     });
+   // console.log(orderList);
+    var keys = ['timeDate','type','amount','currency','status'];
+    var csv = jsontocsv({data: orderList, fields: keys});
+    console.log(csv);
+   // arraytocsv(orderList);
+   fs.writeFile(CSVFILE_DEFAULT, csv, function(err){
+       if (err) throw err;
+       console.log('Order saved to CSV');
+   });
 }
